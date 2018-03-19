@@ -31,6 +31,12 @@ services:
       - pimcore5-database:/var/lib/mysql #TODO: change it for mariadb etc. (env variable?)
     ports:
       - "${MYSQL_HOST_PORT:-3306}:3306"
+
+  composer:
+    image: composer:1.6.3
+    volumes:
+      - ./src:/app
+    command: composer install --ignore-platform-reqs --no-scripts #TODO: change it (quick woraround for now php extensions)
      
 volumes:
   pimcore5-database:
