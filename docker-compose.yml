@@ -2,9 +2,14 @@ version: '3'
 
 services:
   php:
-    image: php:${PHP_VERSION:-7.1}-fpm
+    build:
+      context: docker/php
     volumes:
-      - ./src:/var/www/pimcore
+      - ${APPLICATION:-./pimcore}:${CONTAINER_APPLICATION_PATH-/var/www/pimcore}
+      - ./php/php.ini:/usr/local/etc/php/php.ini
+      - ./php/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+    expose:
+      - "9000"
     links:
       - db:db
 
@@ -22,13 +27,15 @@ services:
       
   db:
     image: mysql:${MYSQL_VERSION:-8.0}
+    volumes:
+      - ".data/mysql:/var/lib/mysql"
+      - ${APPLICATION:-./pimcore}:${CONTAINER_APPLICATION_PATH-/var/www/pimcore}
+      - ./docker/mysql/default.cnf:/etc/mysql/conf.d/default.cnf
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-pimcore}
       MYSQL_USER: ${MYSQL_USER:-pimcore}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-pimcore}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
-    volumes:
-      - pimcore5-database:/var/lib/mysql #TODO: change it for mariadb etc. (env variable?)
     ports:
       - "${MYSQL_HOST_PORT:-3306}:3306"
 
@@ -37,6 +44,16 @@ services:
     volumes:
       - ./src:/app
     command: composer install --ignore-platform-reqs --no-scripts #TODO: change it (quick woraround for now php extensions)
-     
-volumes:
-  pimcore5-database:
+
+
+  mailcatcher:
+    image: schickling/mailcatcher
+    ports:
+      - "${MAILCATCHER_HOST_PORT}:1080"
+
+  redis:
+    image: redis:latest
+    ports:
+      - ${REDIS_HOST_PORT:-6379}:6379
+    volumes:
+      - ./.redis-data:/var/lib/redis
