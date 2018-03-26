@@ -1,3 +1,5 @@
 .env
 src/
 .idea
+.data
+.redis-data
